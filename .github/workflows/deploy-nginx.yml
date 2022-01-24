@@ -3,7 +3,12 @@ on:
   push:
     paths:
       projects/nginx/tf
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Docker image tag"
+        default: latest
+        type: string
 jobs:
   run:
     name: Deploy nginx
@@ -36,3 +41,5 @@ jobs:
         export KUBE_CONFIG_PATH="$KUBECONFIG"
         terraform init
         terraform apply -auto-approve
+      env:
+        TF_VAR_image_tag: ${{ github.event.inputs.image_tag }}
