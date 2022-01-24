@@ -10,12 +10,6 @@ terraform {
   }
 }
 
-provider "helm" {
-  kubernetes {
-    config_path = "/home/sven/.kube/config"
-  }
-}
-
 resource "helm_release" "example" {
   name       = "nginx"
   chart      = "../charts/nginx"
