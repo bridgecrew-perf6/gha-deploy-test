@@ -1,5 +1,9 @@
 name: Deploy alpine
-on: push
+on:
+  push:
+    paths:
+      projects/alpine/tf
+  workflow_dispatch: {}
 jobs:
   run:
     name: Deploy alpine
