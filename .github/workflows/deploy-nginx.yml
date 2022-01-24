@@ -1,0 +1,24 @@
+name: Deploy nginx
+on: push
+jobs:
+  run:
+    name: Deploy nginx
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+    - id: auth
+      uses: google-github-actions/auth@v0.4.0
+      with:
+        workload_identity_provider: projects/312389532942/locations/global/workloadIdentityPools/github-actions/providers/github-actions
+        service_account: github-actions@opst-82-poc.iam.gserviceaccount.com
+
+    - id: get-gke-credentials
+      uses: google-github-actions/get-gke-credentials@v0.4.0
+      with:
+        cluster_name: kubehaus
+        location: us-west1
+
+    - id: get-pods
+      run: kubectl get pods
