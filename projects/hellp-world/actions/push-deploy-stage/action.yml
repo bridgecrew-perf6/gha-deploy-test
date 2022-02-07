@@ -1,0 +1,56 @@
+name: push-deploy-stage
+description: Push a Docker image to GAR and deploy it to the stage env
+
+inputs:
+  image:
+    description: "The local Docker image to be pushed."
+    default: latest
+    type: string
+  image_tag:
+    description: "The tag to be pushed to."
+    default: latest
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+
+  - uses: actions/checkout@v2
+    with:
+      repository: mozilla-it/gha-deploy-test
+
+  - id: auth
+    uses: google-github-actions/auth@v0
+    with:
+      workload_identity_provider: projects/312389532942/locations/global/workloadIdentityPools/github-actions/providers/github-actions
+      service_account: github-actions@opst-82-poc.iam.gserviceaccount.com
+
+  - uses: google-github-actions/setup-gcloud@v0
+
+  - run: |
+      gcloud --quiet auth configure-docker us-west1-docker.pkg.dev
+      docker tag '${{ inputs.image }}' "$TARGET_IMAGE"
+      docker push "$TARGET_IMAGE"
+    env:
+      TARGET_IMAGE: us-west1-docker.pkg.dev/opst-82-poc/hello-world-app/foo:${{ inputs.image_tag }}
+    shell: sh
+
+  - id: get-gke-credentials
+    uses: google-github-actions/get-gke-credentials@v0
+    with:
+      cluster_name: kubehaus
+      location: us-west1
+
+  - uses: hashicorp/setup-terraform@v1
+    with:
+      terraform_version: 1.1.4
+
+  - name: Deploy the Helm chart with Terraform
+    run: |
+      terraform init
+      terraform apply -auto-approve
+    working-directory: projects/hellp-world/tf/stage
+    env:
+      KUBE_CONFIG_PATH: ${{ env.KUBECONFIG }}
+      TF_VAR_image_tag: ${{ inputs.image_tag }}
+    shell: sh
